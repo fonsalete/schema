@@ -2,85 +2,262 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Schéma Géométrique Interactif</title>
+    <title>Labo de Géométrie et Cinématique</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 50px; background-color: #f4f7f6; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        svg { border: 1px solid #ddd; background: #fff; border-radius: 8px; }
-        .control { margin-top: 20px; width: 100%; }
-        .alert-text { color: #e74c3c; font-weight: bold; height: 20px; text-align: center; margin-top: 10px; visibility: hidden; }
-        text { font-size: 12px; font-weight: bold; fill: #555; pointer-events: none; }
-        circle { transition: fill 0.2s; }
+        :root { --primary: #2563eb; --bg: #f1f5f9; --accent: #ef4444; --dark: #1e293b; --ghost: #94a3b8; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
+        
+        nav { background: var(--dark); width: 100%; display: flex; justify-content: center; gap: 10px; padding: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 100; }
+        nav button { padding: 10px 25px; cursor: pointer; background: #334155; color: white; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; }
+        nav button.active { background: var(--primary); box-shadow: 0 0 10px rgba(37, 99, 235, 0.5); }
+
+        .tab-content { display: none; width: 100%; max-width: 1400px; padding: 20px; box-sizing: border-box; }
+        .tab-content.active { display: flex; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .ackermann-container { display: flex; gap: 20px; width: 100%; height: 75vh; }
+        .controls { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; overflow-y: auto; }
+        .view { background: white; padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex-grow: 1; position: relative; min-height: 500px; }
+        #canvas { background: #ffffff; border: 1px solid #e2e8f0; width: 100%; height: 100%; border-radius: 8px; }
+        
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px; color: #334155; }
+        input[type="range"], select { width: 100%; cursor: pointer; }
+        
+        .math-panel { background: var(--dark); color: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 15px; font-family: 'Courier New', monospace; font-size: 0.8rem; }
+        .math-title { color: #38bdf8; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #334155; }
+        
+        .projection { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3; opacity: 0.5; }
+        .wheel { fill: var(--dark); stroke: #000; }
+        .wheel-ghost { fill: none; stroke: var(--ghost); stroke-width: 2; stroke-dasharray: 3,2; }
+        .chassis { fill: rgba(37, 99, 235, 0.05); stroke: var(--primary); stroke-width: 2; }
+        .label-text { font-size: 11px; fill: var(--dark); font-weight: bold; }
+        
+        .btn-ui { width: 100%; padding: 10px; cursor: pointer; background: #334155; color: white; border: none; border-radius: 4px; margin-top: 8px; font-weight: bold; }
+        .btn-ui:hover { opacity: 0.9; }
+
+        /* Styles Onglet 1 */
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin: auto; text-align: center; }
+        #scene { border: 1px solid #ddd; background: #fff; border-radius: 8px; margin-bottom: 20px; }
+        .alert-text { color: var(--accent); font-weight: bold; height: 24px; margin-top: 10px; visibility: hidden; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h3>Rayons Tangents Dynamiques</h3>
+<nav>
+    <button id="btn1" onclick="showTab(1)" class="active">1. Rayons Tangents</button>
+    <button id="btn2" onclick="showTab(2)">2. Simulateur Ackermann</button>
+</nav>
 
+<div id="tab1" class="tab-content active">
+    <div class="card">
+        <h2 style="margin-top:0; color:var(--dark);">Rayons Tangents Dynamiques</h2>
         <svg id="scene" width="600" height="300">
             <line id="vecLine" x1="150" y1="150" x2="350" y2="150" stroke="#ccc" stroke-width="2" stroke-dasharray="4" />
-            
             <circle id="circleA" cx="150" cy="150" r="25" fill="rgba(52, 152, 219, 0.2)" stroke="#3498db" stroke-width="2" />
             <circle cx="150" cy="150" r="3" fill="#3498db" />
-            <text x="145" y="140">A</text>
-            
+            <text x="145" y="140" style="font-weight:bold; fill:#555;">A</text>
             <circle id="circleB" cx="350" cy="150" r="175" fill="rgba(46, 204, 113, 0.2)" stroke="#2ecc71" stroke-width="2" />
             <circle id="pointB" cx="350" cy="150" r="3" fill="#e74c3c" />
-            <text id="labelB" x="345" y="140">B</text>
+            <text id="labelB" x="345" y="140" style="font-weight:bold; fill:#555;">B</text>
         </svg>
-
-        <div class="control">
-            <input type="range" id="slider" min="0" max="400" value="200" style="width: 100%;">
-            <p style="text-align:center;">Distance AB : <span id="valDist">200</span> px | Rayon B : <span id="valRB">175</span> px</p>
+        <div style="width: 100%;">
+            <input type="range" id="slider-geo" min="0" max="400" value="200">
+            <p style="font-weight:bold; color:var(--dark);">Distance AB : <span id="valDist">200</span> px | Rayon B : <span id="valRB">175</span> px</p>
             <div id="alertMsg" class="alert-text">⚠️ RAYON TROP FAIBLE !</div>
         </div>
     </div>
+</div>
 
-    <script>
-        const slider = document.getElementById('slider');
-        const circleB = document.getElementById('circleB');
-        const pointB = document.getElementById('pointB');
-        const labelB = document.getElementById('labelB');
-        const vecLine = document.getElementById('vecLine');
-        const alertMsg = document.getElementById('alertMsg');
+<div id="tab2" class="tab-content">
+    <div class="ackermann-container">
+        <div class="controls">
+            <h3 style="margin:0 0 15px 0; color:var(--primary);">Paramètres Châssis</h3>
+            <div class="input-group">
+                <label>Empattement (L) : <span id="v-L">200</span></label>
+                <input type="range" id="L" min="100" max="400" value="200">
+            </div>
+            <div class="input-group">
+                <label>Voie (W) : <span id="v-W">120</span></label>
+                <input type="range" id="W" min="80" max="250" value="120">
+            </div>
+            <div class="input-group">
+                <label>Mode de direction</label>
+                <select id="mode">
+                    <option value="ackermann">Ackermann Standard</option>
+                    <option value="double">Double Ackermann</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Angle Moyen (δ) : <span id="v-steer">0</span>°</label>
+                <input type="range" id="steer" min="-45" max="45" value="0">
+            </div>
+
+            <div class="math-panel">
+                <div class="math-title">Analyse Dynamique</div>
+                <div id="results">R : ∞<br>δ_int : 0.00°<br>δ_ext : 0.00°</div>
+            </div>
+
+            <div class="input-group" style="margin-top:20px;">
+                <label>Déplacement :</label>
+                <input type="range" id="pos" min="-1000" max="1000" value="0">
+            </div>
+            <button class="btn-ui" onclick="resetVehicle()">Réinitialiser Position</button>
+            <button class="btn-ui" onclick="clearTrace()" style="background:var(--accent);">Effacer la Trace</button>
+        </div>
+
+        <div class="view">
+            <svg id="canvas" viewBox="0 0 1000 800">
+                <path id="trajectory" style="fill:none; stroke:#3b82f6; stroke-width:2; stroke-dasharray:5,3;" d="" />
+                
+                <g id="world">
+                    <line id="proj_fl" class="projection" /><line id="proj_fr" class="projection" />
+                    <line id="proj_rl" class="projection" /><line id="proj_rr" class="projection" />
+                    <line id="proj_center" class="projection" style="stroke:var(--ghost); stroke-dasharray:none; opacity:0.8;" />
+
+                    <g id="vehicle">
+                        <rect id="body" class="chassis" />
+                        <g id="g_fl"><rect class="wheel" width="12" height="30" rx="2" x="-6" y="-15" /></g>
+                        <g id="g_fr"><rect class="wheel" width="12" height="30" rx="2" x="-6" y="-15" /></g>
+                        <g id="g_rl"><rect class="wheel" width="12" height="30" rx="2" x="-6" y="-15" /></g>
+                        <g id="g_rr"><rect class="wheel" width="12" height="30" rx="2" x="-6" y="-15" /></g>
+                        <g id="g_center"><rect class="wheel-ghost" width="12" height="30" rx="2" x="-6" y="-15" /></g>
+                    </g>
+
+                    <text id="lbl_fl" class="label-text"></text><text id="lbl_fr" class="label-text"></text>
+                    <text id="lbl_rl" class="label-text"></text><text id="lbl_rr" class="label-text"></text>
+
+                    <g id="cir_group" style="fill:var(--accent); font-weight:bold;">
+                        <circle r="6" />
+                        <text x="12" y="5" style="font-size:14px; paint-order: stroke; stroke: #fff; stroke-width: 3px;">CIR</text>
+                    </g>
+                </g>
+            </svg>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(n) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab'+n).classList.add('active');
+        document.getElementById('btn'+n).classList.add('active');
+    }
+
+    // LOGIQUE GEOMETRIE
+    const sliderGeo = document.getElementById('slider-geo'), circleB = document.getElementById('circleB'), circleA = document.getElementById('circleA');
+    sliderGeo.addEventListener('input', () => {
+        const d = parseInt(sliderGeo.value), rA = 25, xA = 150, xB = xA + d, rB = d - rA;
+        document.getElementById('pointB').setAttribute('cx', xB); circleB.setAttribute('cx', xB); 
+        document.getElementById('vecLine').setAttribute('x2', xB); document.getElementById('labelB').setAttribute('x', xB - 5);
+        circleB.setAttribute('r', Math.max(0, rB));
+        if (rB <= 5) { document.getElementById('alertMsg').style.visibility = 'visible'; circleA.setAttribute('fill', 'rgba(231, 76, 60, 0.5)'); }
+        else { document.getElementById('alertMsg').style.visibility = 'hidden'; circleA.setAttribute('fill', 'rgba(52, 152, 219, 0.2)'); }
+        document.getElementById('valDist').textContent = d; document.getElementById('valRB').textContent = Math.max(0, rB);
+    });
+
+    // LOGIQUE ACKERMANN
+    let state = { x: 500, y: 400, heading: 0, lastPos: 0, path: [] };
+    const el = {}; ['L', 'W', 'steer', 'pos', 'mode'].forEach(id => el[id] = document.getElementById(id));
+
+    function clearTrace() { state.path = []; document.getElementById('trajectory').setAttribute('d', ''); }
+    function resetVehicle() { state.x = 500; state.y = 400; state.heading = 0; state.lastPos = 0; el.pos.value = 0; clearTrace(); updateAck(); }
+
+    function updateAck() {
+        const L = parseInt(el.L.value), W = parseInt(el.W.value), rawSteer = parseInt(el.steer.value), mode = el.mode.value;
         
-        const valDist = document.getElementById('valDist');
-        const valRB = document.getElementById('valRB');
+        // Physique : Slider Droite (Positif) -> Braquage Droite (Rad Positif pour les calculs)
+        const rad = rawSteer * Math.PI / 180;
+        
+        // Display : On affiche l'opposé pour que Droite = Valeur Négative
+        document.getElementById('v-L').innerText = L;
+        document.getElementById('v-W').innerText = W;
+        document.getElementById('v-steer').innerText = -rawSteer;
 
-        const xA = 150; // Position X fixe de A
-        const rA = 25;  // Rayon fixe de A
+        let d_fl=0, d_fr=0, d_rl=0, d_rr=0, R_val=0, cirX=null, cirY=null;
+        const pivotY = (mode === 'ackermann' ? -L/2 : 0);
 
-        slider.addEventListener('input', (e) => {
-            const distance = parseInt(e.target.value);
-            const xB = xA + distance;
-            const rB = distance - rA; // Calcul pour que les périmètres se touchent
-
-            // 1. Mise à jour des positions
-            pointB.setAttribute('cx', xB);
-            circleB.setAttribute('cx', xB);
-            vecLine.setAttribute('x2', xB);
-            labelB.setAttribute('x', xB - 5);
-
-            // 2. Mise à jour du rayon de B (minimum 0 pour éviter les erreurs SVG)
-            circleB.setAttribute('r', Math.max(0, rB));
-
-            // 3. Logique d'alerte et de couleur
-            if (rB <= 5) { // Seuil d'alerte à 5px de rayon
-                circleA.setAttribute('fill', 'rgba(231, 76, 60, 0.5)'); // Rouge transparent
-                circleB.setAttribute('stroke', '#e74c3c');
-                alertMsg.style.visibility = 'visible';
-            } else {
-                circleB.setAttribute('fill', 'rgba(46, 204, 113, 0.2)'); // Vert original
-                circleA.setAttribute('fill', 'rgba(52, 152, 219, 0.2)'); // Bleu original
-                circleB.setAttribute('stroke', '#2ecc71');
-                alertMsg.style.visibility = 'hidden';
+        if (rawSteer !== 0) {
+            const pivotL = (mode === 'ackermann' ? L : L/2);
+            const R = pivotL / Math.tan(rad);
+            R_val = R;
+            
+            // Calcul des angles individuels (physique)
+            if (rawSteer > 0) { // Droite
+                d_fr = Math.atan(pivotL / (Math.abs(R) - W/2)) * Math.sign(R);
+                d_fl = Math.atan(pivotL / (Math.abs(R) + W/2)) * Math.sign(R);
+            } else { // Gauche
+                d_fl = Math.atan(pivotL / (Math.abs(R) - W/2)) * Math.sign(R);
+                d_fr = Math.atan(pivotL / (Math.abs(R) + W/2)) * Math.sign(R);
             }
+            if (mode === 'double') { d_rl = -d_fl; d_rr = -d_fr; }
+            cirX = R; cirY = (mode === 'ackermann' ? L/2 : 0);
+        }
 
-            // 4. Affichage des valeurs
-            valDist.textContent = distance;
-            valRB.textContent = rB > 0 ? rB : 0;
-        });
-    </script>
+        // Résultats maths (affichage inversé)
+        if (rawSteer !== 0) {
+            const intA = Math.max(Math.abs(d_fl), Math.abs(d_fr));
+            const extA = Math.min(Math.abs(d_fl), Math.abs(d_fr));
+            // Multiplié par -sign(rawSteer) pour refléter la convention demandée
+            const sign = -Math.sign(rawSteer);
+            document.getElementById('results').innerHTML = 
+                `R : ${Math.abs(R_val).toFixed(1)} px<br>δ_int : ${(intA * 180 / Math.PI * sign).toFixed(2)}°<br>δ_ext : ${(extA * 180 / Math.PI * sign).toFixed(2)}°`;
+        } else {
+            document.getElementById('results').innerHTML = `R : ∞<br>δ_int : 0.00°<br>δ_ext : 0.00°`;
+        }
+
+        // Update Car
+        document.getElementById('vehicle').setAttribute('transform', `translate(${state.x},${state.y}) rotate(${state.heading * 180 / Math.PI})`);
+        const b = document.getElementById('body');
+        b.setAttribute('x', -W/2); b.setAttribute('y', -L/2); b.setAttribute('width', W); b.setAttribute('height', L);
+
+        const sw = (id, x, y, a) => document.getElementById('g_'+id).setAttribute('transform', `translate(${x},${y}) rotate(${a * 180 / Math.PI})`);
+        sw('fl', -W/2, -L/2, d_fl); sw('fr', W/2, -L/2, d_fr);
+        sw('rl', -W/2, L/2, d_rl); sw('rr', W/2, L/2, d_rr);
+        sw('center', 0, pivotY, rad);
+
+        const s = Math.sin(state.heading), c = Math.cos(state.heading), cirG = document.getElementById('cir_group');
+        if (cirX !== null) {
+            const wx = state.x + (cirX * c - cirY * s), wy = state.y + (cirX * s + cirY * c);
+            cirG.setAttribute('visibility', 'visible'); cirG.setAttribute('transform', `translate(${wx},${wy})`);
+            const up = (id, xl, yl, a) => {
+                const l = document.getElementById('proj_'+id), lbl = document.getElementById('lbl_'+id);
+                const sx = state.x + (xl * c - yl * s), sy = state.y + (xl * s + yl * c);
+                if(l) { l.setAttribute('x1', sx); l.setAttribute('y1', sy); l.setAttribute('x2', wx); l.setAttribute('y2', wy); }
+                if(lbl) { 
+                    lbl.setAttribute('x', sx); lbl.setAttribute('y', sy - 20); 
+                    // Affichage graphique inversé : -angle
+                    lbl.textContent = (-a * 180 / Math.PI).toFixed(1) + "°"; 
+                }
+            };
+            up('fl', -W/2, -L/2, d_fl); up('fr', W/2, -L/2, d_fr);
+            up('rl', -W/2, L/2, d_rl); up('rr', W/2, L/2, d_rr);
+            up('center', 0, pivotY, rad);
+        } else {
+            cirG.setAttribute('visibility', 'hidden');
+            ['fl','fr','rl','rr','center'].forEach(id => { 
+                const l = document.getElementById('proj_'+id); if(l) l.setAttribute('x1',-1000); 
+                const t = document.getElementById('lbl_'+id); if(t) t.textContent=""; 
+            });
+        }
+        if(state.path.length > 1) document.getElementById('trajectory').setAttribute('d', 'M' + state.path.join(' L'));
+    }
+
+    el.pos.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value), dM = (val - state.lastPos) / 2;
+        state.lastPos = val;
+        const sR = (parseInt(el.steer.value)) * Math.PI / 180, L = parseInt(el.L.value);
+        if (sR !== 0) state.heading += (dM * Math.tan(sR)) / (el.mode.value === 'double' ? L/2 : L);
+        state.x += dM * Math.sin(state.heading); state.y -= dM * Math.cos(state.heading);
+        state.path.push(`${state.x.toFixed(1)},${state.y.toFixed(1)}`);
+        if(state.path.length > 1500) state.path.shift();
+        updateAck();
+    });
+
+    ['L', 'W', 'steer', 'mode'].forEach(id => el[id].addEventListener('input', updateAck));
+    updateAck();
+</script>
 </body>
 </html>
