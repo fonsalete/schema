@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Schéma Géométrique Interactif</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 50px; background-color: #f4f7f6; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        svg { border: 1px solid #ddd; background: #fff; border-radius: 8px; }
+        .control { margin-top: 20px; width: 100%; }
+        .alert-text { color: #e74c3c; font-weight: bold; height: 20px; text-align: center; margin-top: 10px; visibility: hidden; }
+        text { font-size: 12px; font-weight: bold; fill: #555; pointer-events: none; }
+        circle { transition: fill 0.2s; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h3>Rayons Tangents Dynamiques</h3>
+
+        <svg id="scene" width="600" height="300">
+            <line id="vecLine" x1="150" y1="150" x2="350" y2="150" stroke="#ccc" stroke-width="2" stroke-dasharray="4" />
+            
+            <circle id="circleA" cx="150" cy="150" r="25" fill="rgba(52, 152, 219, 0.2)" stroke="#3498db" stroke-width="2" />
+            <circle cx="150" cy="150" r="3" fill="#3498db" />
+            <text x="145" y="140">A</text>
+            
+            <circle id="circleB" cx="350" cy="150" r="175" fill="rgba(46, 204, 113, 0.2)" stroke="#2ecc71" stroke-width="2" />
+            <circle id="pointB" cx="350" cy="150" r="3" fill="#e74c3c" />
+            <text id="labelB" x="345" y="140">B</text>
+        </svg>
+
+        <div class="control">
+            <input type="range" id="slider" min="0" max="400" value="200" style="width: 100%;">
+            <p style="text-align:center;">Distance AB : <span id="valDist">200</span> px | Rayon B : <span id="valRB">175</span> px</p>
+            <div id="alertMsg" class="alert-text">⚠️ RAYON TROP FAIBLE !</div>
+        </div>
+    </div>
+
+    <script>
+        const slider = document.getElementById('slider');
+        const circleB = document.getElementById('circleB');
+        const pointB = document.getElementById('pointB');
+        const labelB = document.getElementById('labelB');
+        const vecLine = document.getElementById('vecLine');
+        const alertMsg = document.getElementById('alertMsg');
+        
+        const valDist = document.getElementById('valDist');
+        const valRB = document.getElementById('valRB');
+
+        const xA = 150; // Position X fixe de A
+        const rA = 25;  // Rayon fixe de A
+
+        slider.addEventListener('input', (e) => {
+            const distance = parseInt(e.target.value);
+            const xB = xA + distance;
+            const rB = distance - rA; // Calcul pour que les périmètres se touchent
+
+            // 1. Mise à jour des positions
+            pointB.setAttribute('cx', xB);
+            circleB.setAttribute('cx', xB);
+            vecLine.setAttribute('x2', xB);
+            labelB.setAttribute('x', xB - 5);
+
+            // 2. Mise à jour du rayon de B (minimum 0 pour éviter les erreurs SVG)
+            circleB.setAttribute('r', Math.max(0, rB));
+
+            // 3. Logique d'alerte et de couleur
+            if (rB <= 5) { // Seuil d'alerte à 5px de rayon
+                circleA.setAttribute('fill', 'rgba(231, 76, 60, 0.5)'); // Rouge transparent
+                circleB.setAttribute('stroke', '#e74c3c');
+                alertMsg.style.visibility = 'visible';
+            } else {
+                circleB.setAttribute('fill', 'rgba(46, 204, 113, 0.2)'); // Vert original
+                circleA.setAttribute('fill', 'rgba(52, 152, 219, 0.2)'); // Bleu original
+                circleB.setAttribute('stroke', '#2ecc71');
+                alertMsg.style.visibility = 'hidden';
+            }
+
+            // 4. Affichage des valeurs
+            valDist.textContent = distance;
+            valRB.textContent = rB > 0 ? rB : 0;
+        });
+    </script>
+</body>
+</html>
